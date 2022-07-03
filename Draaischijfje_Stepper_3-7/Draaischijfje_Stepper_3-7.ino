@@ -20,6 +20,7 @@ long RoundCount = 0;
 int StepsRound = 4805;
 int CW = 0;
 int CCW = 0;
+int Stop =0;
 long MakeRotate;
 
 //=========================== Setup =========================
@@ -58,11 +59,11 @@ void loop() {
 
 
   // Clockwise
-  if (motorCW > 100) {
+  if (motorCW > 100 && CCW == 0 && Stepper1.isRunning()==0) {
     CW = 1;
   }
   // Counter Clockwise
-  if (motorCCW > 100) {
+  if (motorCCW > 100 && CW == 0 && Stepper1.isRunning()==0) {
     CCW = 1;
   }
 
@@ -150,6 +151,7 @@ void loop() {
   // reset print timer and print
   if (printTime == 1000) {
     printTime = 0;
-    Serial.println(Stepper1.currentPosition());
+    Serial.println(Stepper1.isRunning());
   }
+
 }
