@@ -1,3 +1,5 @@
+
+
 #include <DMXSerial.h>
 #include <AccelStepper.h>
 #include <elapsedMillis.h>
@@ -17,7 +19,7 @@ long currentRollAngle;
 long previousRollAngle;
 long Roll;
 long RoundCount = 0;
-int StepsRound = 4805;
+int StepsRound = 1200;
 int CW = 0;
 int CCW = 0;
 int Stop =0;
@@ -25,7 +27,7 @@ long MakeRotate;
 
 //=========================== Setup =========================
 void setup() {
-  Serial.begin(115200);
+  //Serial.begin(115200);
 
   // setup dmx
   DMXSerial.init(DMXReceiver);  // reciver dmx
@@ -33,8 +35,8 @@ void setup() {
 
   // setup stepper
   Stepper1.setMaxSpeed(4000);
-  Stepper1.setSpeed(2000);
-  Stepper1.setAcceleration(1000);
+  Stepper1.setSpeed(4000);
+  Stepper1.setAcceleration(3000);
   Stepper1.setCurrentPosition(0);
 }
 
@@ -96,11 +98,11 @@ void loop() {
 
   // make clockwise
   if (CW == 1) {
-    MakeRotate = Stepper1.currentPosition() - (MotorPos - 1) + 2000;
+    MakeRotate = Stepper1.currentPosition() - (MotorPos - 1) + 700;
   }
   // make counter clockwise
   if (CCW == 1) {
-    MakeRotate = Stepper1.currentPosition() - (MotorPos - 1) - 2000;
+    MakeRotate = Stepper1.currentPosition() - (MotorPos + 1) - 700;
   }
 
   // make current Angle
@@ -151,7 +153,7 @@ void loop() {
   // reset print timer and print
   if (printTime == 1000) {
     printTime = 0;
-    Serial.println(Stepper1.isRunning());
+    //Serial.println(Stepper1.isRunning());
   }
 
 }
