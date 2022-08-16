@@ -34,8 +34,8 @@ const int maxAcceleration =1000;  // set this to the maximum Acceleration you wa
 
 long initial_homing = -1;  // Used to Home Stepper at startup
 
-int DMXAdress = EEPROM.read(EEpromaAddress);         // Actual DMX adress stored in eprom
-int DMXdisplayAdress = EEPROM.read(EEpromaAddress);  // dmx adress in display
+int DMXAdress =  EEPROM.get( EEpromaAddress, DMXAdress );  // Actual DMX adress stored in eprom
+int DMXdisplayAdress = EEPROM.get( EEpromaAddress, DMXAdress );  // dmx adress in display
 int DMXStatus = 0;                      //  // variable for dmx status
 int LastDMXStatus = 0;                  // variable to detect lat dmx status
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
@@ -49,13 +49,15 @@ long Roll;
 long RoundCount = 0;
 int CW = 0;
 int CCW = 0;
-int Stop =0;
 long MakeRotate;
+int Stopt=0;
 
 //=========================== Setup =========================
 void setup() {
 
   delay(50);
+
+  
 
  // setup serial and display
   //Serial.begin(115200);
@@ -128,7 +130,7 @@ void loop() {
 
   if (Keypad >200 && Keypad < 300) { // enter
     DMXAdress = DMXdisplayAdress;
-    EEPROM.write(EEpromaAddress, DMXAdress);
+    EEPROM.put(EEpromaAddress, DMXAdress);
     DisplayData();
      delay(100);
   }
@@ -194,15 +196,23 @@ Stepper1.setCurrentPosition(0);
 
   // stop clockwise
   if (motorCW < 100 && CW == 1 && Roll == MotorPos + ((RoundCount)*maxPositionLimit)) {
+   
     CW = 0;
     CCW = 0;
+    Stopt =1;
+    
     
   }
   // stop counter clockwise
   if (motorCCW < 100 && CCW == 1 && Roll == MotorPos + ((RoundCount)*maxPositionLimit)) {
+   
     CW = 0;
     CCW = 0;
+    Stopt =1;
+    
   }
+
+  
 
 
   // make clockwise
@@ -213,9 +223,18 @@ Stepper1.setCurrentPosition(0);
   if (CCW == 1) {
     MakeRotate = Stepper1.currentPosition() - (MotorPos + 1) - 550;
   }
+  
 
   // make current Angle
   currentRollAngle = Roll;
+
+  if (Stepper1.isRunning()==0 && Stopt ==1) {
+   
+   Stopt=0;
+   Stepper1.setCurrentPosition(Roll);
+   Stepper1.stop();
+   delay(1000);
+    }
 
 
   // make motor move
@@ -227,7 +246,7 @@ Stepper1.setCurrentPosition(0);
   //================bridging 0 - 360 ======================
   // if the current angle is e.g 1° and the previous angle is 359, substracting them would give -358. So smaller than -180  AND if the current angle (1°) is smaller than the previous angle (359°):
   // ============================================================================================================================================================================================
-  if (currentRollAngle - previousRollAngle < (-maxPositionLimit / 2) && currentRollAngle < previousRollAngle) {  //from 359 to 1
+   if (currentRollAngle - previousRollAngle < (-maxPositionLimit / 2) && currentRollAngle < previousRollAngle) {  //from 359 to 1
 
 
 
@@ -258,6 +277,7 @@ Stepper1.setCurrentPosition(0);
 
   // make Roundcounter count
   RoundCount = MakeRotate / maxPositionLimit;
+
 
   
 
