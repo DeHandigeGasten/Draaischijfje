@@ -49,8 +49,10 @@ long Roll;
 long RoundCount = 0;
 int CW = 0;
 int CCW = 0;
-long MakeRotate;
+long MakeRotate=0;
 int Stopt=0;
+int StoptB=0;
+long diff;
 
 //=========================== Setup =========================
 void setup() {
@@ -92,6 +94,11 @@ void setup() {
 
 // ============================ Loop ====================================
 void loop() {
+
+   // make position
+
+
+  
 
   
 
@@ -165,10 +172,13 @@ void loop() {
   int MotorPos = map(CH1, 0, 65535, 0, maxPositionLimit);
   int motorSpeed = map( DMXSerial.read(DMXAdress + 2), 0, 255, 0, maxSpeedLimit);
   int motorCW = DMXSerial.read(DMXAdress + 3);
+  int CWExtra = map(motorCW,100,255,0,550);
   int motorCCW = DMXSerial.read(DMXAdress + 4);
+  int CCWExtra = map(motorCCW,100,255,0,550);
   int ResetPos = DMXSerial.read(DMXAdress + 5);
   int ResetViaDMX = DMXSerial.read(DMXAdress + 6);
-
+  
+  
 
   //Reset
    if (ResetViaDMX > 128 ) {
@@ -176,66 +186,86 @@ void loop() {
   }
 
   // reset pos
-if (ResetPos > 128 && digitalRead(home_switch ) == LOW) {
-Stepper1.setCurrentPosition(0);
+ if(ResetPos > 128) {
+   HOME();
 }
 
 
   // Clockwise
-  if (motorCW > 100 && CCW == 0 && Stepper1.isRunning()==0) {
+  if (Stopt == 0 && motorCW > 100 && CCW == 0 && Stepper1.isRunning()==0) {
     CW = 1;
   }
   // Counter Clockwise
-  if (motorCCW > 100 && CW == 0 && Stepper1.isRunning()==0) {
+  if (Stopt == 0 && motorCCW > 100 && CW == 0 && Stepper1.isRunning()==0) {
     CCW = 1;
   }
 
 
-  // make position
-  Roll = MotorPos + MakeRotate;
-
+  
   // stop clockwise
-  if (motorCW < 100 && CW == 1 && Roll == MotorPos + ((RoundCount)*maxPositionLimit)) {
+  if (motorCW < 100 && CW == 1 && Roll == (MotorPos) + ((RoundCount)*maxPositionLimit)) {
    
     CW = 0;
     CCW = 0;
     Stopt =1;
     
+   
     
   }
   // stop counter clockwise
-  if (motorCCW < 100 && CCW == 1 && Roll == MotorPos + ((RoundCount)*maxPositionLimit)) {
+  if (motorCCW < 100 && CCW == 1 && Roll == (MotorPos) + ((RoundCount)*maxPositionLimit)) {
    
     CW = 0;
     CCW = 0;
     Stopt =1;
     
+   
+    
+    
   }
 
   
-
-
-  // make clockwise
-  if (CW == 1) {
+ // make clockwise
+  if (Stopt == 0 && CW == 1) {
     MakeRotate = Stepper1.currentPosition() - (MotorPos - 1) + 550;
   }
   // make counter clockwise
-  if (CCW == 1) {
+  if (Stopt == 0 && CCW == 1) {
     MakeRotate = Stepper1.currentPosition() - (MotorPos + 1) - 550;
   }
+
   
 
-  // make current Angle
-  currentRollAngle = Roll;
+  
+ Roll = MotorPos + MakeRotate;
 
-  if (Stepper1.isRunning()==0 && Stopt ==1) {
+  
+
+  while(  Stepper1.isRunning()==0 && Stopt == 1){
+    MakeRotate=0;
+    previousRollAngle=Roll;
+    RoundCount=0;
+    Roll=MotorPos;
+    previousRollAngle=Roll;
+    currentRollAngle=Roll;
+
+    Stepper1.setCurrentPosition(MotorPos);               // 0 sets the motor position to the 0° value as the zero position
+    Stepper1.moveTo(Stepper1.currentPosition());  //motor still has to move to the '0' position as setCurrentPosition doesn't actually move the stepper
+    Stepper1.setSpeed(10);
+    Stepper1.run();
+    Stopt=0;
+
+    
+    
+    
+
    
-   Stopt=0;
-   Stepper1.setCurrentPosition(Roll);
-   Stepper1.stop();
-   delay(1000);
-    }
+   }
 
+   
+
+// make current Angle
+  currentRollAngle = Roll;
 
   // make motor move
   Stepper1.setMaxSpeed(motorSpeed);
@@ -275,8 +305,12 @@ Stepper1.setCurrentPosition(0);
   // make previous angle
   previousRollAngle = currentRollAngle;  //  move the current reading to previous
 
+  // no change during stop
+
+  
+
   // make Roundcounter count
-  RoundCount = MakeRotate / maxPositionLimit;
+  RoundCount = (MakeRotate)/ maxPositionLimit;
 
 
   
